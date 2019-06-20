@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../css/semantic.min.css">
+    <title>个人中心</title>
+</head>
+<body>
+<!--导航-->
+<div class="ui menu">
+    <div class="header item">
+        >
+    </div>
+    <a class="active item" target="_blank" href="main.html">首页</a>
+    <a class="item">流程</a>
+    <div class="right menu" id="user">
+        <div class="item">
+            <div class="teal ui animated button">
+                <div class="visible content" id="name">{{name}}</div>
+                <div class="hidden content">ID</div>
+            </div>
+        </div>
+        <div class="item">
+            <div class="ui animated button" @click="logout()">
+                <div class="visible content">注销</div>
+                <div class="hidden content">LogOut</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="ui center aligned basic segment container" id="coinSymbol">
+    <div class="ui horizontal divider">
+        主流货币行情
+    </div>
+    <div class="ui grey small statistic" v-for="(item, key) of result" :key="key">
+        <div class="label">
+            {{key}}
+        </div>
+        <div class="value">
+            {{item}} $
+        </div>
+    </div>
+</div>
+
+<!--交易对显示-->
+<div class="ui center aligned basic segment container">
+    <div class="ui horizontal divider">
+        已添加的交易对
+    </div>
+</div>
+<div class="ui four cards container center" id="symbol">
+    <div class="ui card" v-for="(item, key) of result" :key="key">
+        <div class="content">
+            <div class="header">
+                交易对: {{key}}
+            </div>
+            <div class="description">
+                <p>预警价格:{{item}} $</p>
+            </div>
+        </div>
+        <div class="ui two bottom attached buttons">
+            <div class="ui red button" @click="removeSymbol(key)">删除</div>
+        </div>
+    </div>
+</div>
+<!--显示结束-->
+
+<!--导航结束-->
+<div class="ui center aligned basic segment container"  id="add">
+    <div class="ui horizontal divider">
+        Add
+    </div>
+
+    <div class="ui large form">
+        <div class="two fields">
+            <div class="field">
+                <label>交易对</label>
+                <input v-model="symbol" placeholder="btcusdt" type="text">
+            </div>
+            <div class="field">
+                <label>价格提醒</label>
+                <input v-model="price" placeholder="9000" type="text">
+            </div>
+        </div>
+    </div>
+
+    <div @click="addSymbol()" class="ui teal labeled icon button">
+        添加交易对
+        <i class="add icon"></i>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/vue"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+<script>
+    var mainCoin = new Vue( {
+        el : '#coinSymbol',
+        data() {
+            return {
+                websock: null,
+                result:[]
+            }
+        },
+        created() {
+            this.initWebSocket();
+        },
+        destroyed() {
+            this.websock.close() //离开路由之后断开websocket连接
+        },
+        methods: {
+            initWebSocket(){ //初始化weosocket
+                const wsuri = "ws://127.0.0.1:8080/person/mainSocket";
+                this.websock = new WebSocket(wsuri);
+                this.websock.onmessage = this.websocketonmessage;
+                this.websock.onopen = this.websocketonopen;
+                this.websock.onerror = this.websocketonerror;
+                this.websock.onclose = this.websocketclose;
+            },
+            websocketonopen(){ //连接建立之后执行send方法发送数据
+            },
+            websocketonerror(){//连接建立失败重连
+                this.initWebSocket();
+            },
+            websocketonmessage(e){ //数据接收
+                const redata = JSON.parse(e.data);
+                mainCoin.result = redata[0];
+            },
+            websocketsend(Data){//数据发送
+                this.websock.send(Data);
+            },
+            websocketclose(e){  //关闭
+                console.log('断开连接',e);
+            },
+        }
+    })
+</script>
+<script>
+
+    var user = new Vue({
+        el: '#user',
+        data() {
+            return{
+                name:''
+            }
+        },
+        created() {
+            this.initUser();
+        },
+        methods:{
+            initUser(){
+                axios.get('./initUser').then(function (response) {
+                    user.name = response.data.name;
+                    initSymbols.showSymbol(user.name);
+                }).catch(function (response) {
+                    alert("初始化用户失败")
+                })
+            },
+            logout(){
+                axios.get("./logout").then(function (value) {
+                    if (value.data.success) {
+                        window.location.href="/index.html"
+                    }
+                })
+            }
+        }
+
+    });
+
+    var initSymbols = new Vue({
+        el: "#symbol",
+        data: {
+            name:'',
+            result:[]
+        },
+        methods: {
+            showSymbol: function (name) {
+                initSymbols.name = name;
+                axios.get('./findSymbolByUser' + '?name=' + name).then(function (value) {
+                    initSymbols.result = value.data;
+                }).catch(function (reason) {
+
+                })
+            },
+            removeSymbol: function (symbol) {
+                axios.get("./deleteSymbolByUser?name=" + initSymbols.name + "&symbol=" + symbol).then(function (value) {
+                    if (value.data.success) {
+                        alert("删除成功");
+                        initSymbols.showSymbol(initSymbols.name);
+                    } else {
+                        alert("删除失败")
+                    }
+                }).catch(function (reason) {
+                    alert("删除异常")
+                })
+            }
+        }
+    });
+
+    new Vue({
+        el: '#add',
+        data: {
+            symbol:'',
+            price:'',
+            name:''
+        },
+        methods: {
+            // 添加交易对
+            addSymbol: function () {
+                if (this.symbol == '' || this.price == ''){
+                    alert("不能为空")
+                } else {
+                    axios.post('./addSymbol',{name:user.name, symbol:this.symbol, price:this.price})
+                        .then(function (response) {
+                            if (response.data) {
+                                alert("添加成功");
+                                initSymbols.showSymbol(user.name)
+                            } else {
+                                alert("添加失败")
+                            }
+                        }).catch(function (reason) {
+                        console.log(reason);
+                        alert("添加异常")
+                    })
+                }
+            }
+        }
+    })
+</script>
+<script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+<script src="../js/semantic.min.js"></script>
+<!--<script src="js/main.js"></script>-->
+
+</body>
+</html>

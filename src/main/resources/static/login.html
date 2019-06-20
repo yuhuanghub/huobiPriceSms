@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>登录</title>
+    <link rel="stylesheet" href="./css/semantic.min.css">
+    <style type="text/css">
+        body {
+            background-color: #ffffff;
+        }
+        body > .grid {
+            height: 100%;
+        }
+        .column {
+            max-width: 450px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="ui middle aligned center aligned grid" id="login">
+    <div class="column">
+        <h2 class="ui teal header">
+            <div class="content">
+                登录
+            </div>
+        </h2>
+
+        <form class="ui large form">
+            <div class="field">
+                <div class="ui left icon input">
+                    <i class="user icon"></i>
+                    <input v-model="phone" type="text" placeholder="手机号码">
+                </div>
+            </div>
+            <div class="field">
+                <div class="ui left icon input">
+                    <i class="lock icon"></i>
+                    <input v-model="password" type="password" name="password" placeholder="密码">
+                </div>
+            </div>
+            <div class="ui fluid large teal submit button" @click="login()">登录</div>
+        </form>
+    </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/vue"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+<script>
+    new Vue({
+        el: '#login',
+        data: {
+            phone:'',
+            password:''
+        },
+        methods:{
+            login: function () {
+                axios.post("/user/login", {phone:this.phone, password:this.password})
+                    .then(function (response) {
+                        if (response.data.success) {
+                            window.location.href="/person/main.html?user=" + response.data.message;
+                        } else {
+                            alert(response.data.message)
+                        }
+                    })
+            }
+        }
+    })
+</script>
+
+<script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+<script src="./js/semantic.min.js"></script>
+</body>
+</html>
