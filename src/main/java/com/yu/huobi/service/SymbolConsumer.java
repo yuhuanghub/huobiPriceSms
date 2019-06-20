@@ -45,6 +45,7 @@ public class SymbolConsumer {
                     if (Math.abs(Float.valueOf(mUserPrice).intValue() - Float.valueOf(mPrice).intValue()) < 1.5){
                         // 达到预警价格附近
                         System.out.println(allUser.get(i).getPhone() + "用户的" + key + "达到预警价格 " + "预警价格为:" + mUserPrice);
+                        sendSms(allUser.get(i).getPhone(), mUserPrice, mPrice, key);
                         break;
                     }
                 } else {
@@ -58,7 +59,7 @@ public class SymbolConsumer {
     @Async
     public void sendSms(String phone, String userPrice, String price, String symbol){
         // 移除用户交易对预警
-//        mRedisUtil.hdel(phone, symbol);
+        mRedisUtil.hdel(phone, symbol);
         System.out.println("发送短信预警");
     }
 
