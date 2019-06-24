@@ -65,7 +65,9 @@ public class SocketService {
     }
 
     public void sendMessage(String message) throws IOException {
-        this.session.getBasicRemote().sendText(message);
+        if (session.isOpen()){
+            this.session.getBasicRemote().sendText(message);
+        }
     }
 
     public static void sendInfo(String message) throws IOException {
